@@ -124,10 +124,16 @@ def batcher(tokenizer, task_index, n_token_type=4, is_pretrain=False, ):
         adm_num = torch.tensor([x.size(1) for x in raw_age_gender_index])
         max_n_tokens = seq_len.max().item()
         max_n_adms = adm_num.max().item()
-        input_ids = torch.cat([F.pad(raw_input_id, (0, max_n_tokens - raw_input_id.size(1)), "constant", tokenizer.convert_tokens_to_ids(["[PAD]"], voc_type="all")[0]) for raw_input_id in raw_input_ids], dim=0)
-        token_types = torch.cat([F.pad(raw_token_type, (0, max_n_tokens - raw_token_type.size(1)), "constant", 0) for raw_token_type in raw_token_types], dim=0)
-        adm_index = torch.cat([F.pad(raw_adm_idx, (0, max_n_tokens - raw_adm_idx.size(1)), "constant", 0) for raw_adm_idx in raw_adm_index], dim=0)
-        age_gender_ids = torch.cat([F.pad(raw_age_gender_idx, (0, max_n_adms - raw_age_gender_idx.size(1)), "constant", tokenizer.convert_tokens_to_ids(["[PAD]"], voc_type="age_gender")[0]) for raw_age_gender_idx in raw_age_gender_index], dim=0)
+        
+        seq_pad_id = tokenizer.convert_tokens_to_ids(["[PAD]"], voc_type="all")[0]
+        token_pad_id = 0
+        adm_pad_id = 0
+        age_gender_pad_id = tokenizer.convert_tokens_to_ids(["[PAD]"], voc_type="age_gender")[0]
+
+        input_ids = torch.cat([F.pad(raw_input_id, (0, max_n_tokens - raw_input_id.size(1)), "constant", seq_pad_id) for raw_input_id in raw_input_ids], dim=0)
+        token_types = torch.cat([F.pad(raw_token_type, (0, max_n_tokens - raw_token_type.size(1)), "constant", token_pad_id) for raw_token_type in raw_token_types], dim=0)
+        adm_index = torch.cat([F.pad(raw_adm_idx, (0, max_n_tokens - raw_adm_idx.size(1)), "constant", adm_pad_id) for raw_adm_idx in raw_adm_index], dim=0)
+        age_gender_ids = torch.cat([F.pad(raw_age_gender_idx, (0, max_n_adms - raw_age_gender_idx.size(1)), "constant", age_gender_pad_id) for raw_age_gender_idx in raw_age_gender_index], dim=0)
         assert input_ids.shape == token_types.shape == adm_index.shape
 
         if is_pretrain:
