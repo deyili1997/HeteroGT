@@ -38,14 +38,14 @@ class FineTuneEHRDataset(Dataset):
                     
                     if task in ["death", "stay", "readmission"]:  # binary prediction
                         hadm_records[hadm_id] = list(patient)
-                        genders[hadm_id] = row["GENDER"]
+                        # genders[hadm_id] = row["GENDER"]
                         ages[hadm_id] = list(age)
                         labels[hadm_id] = [row["DEATH"], row["STAY_DAYS"], row["READMISSION"]]
                     else: # next diagnosis prediction
                         label = row["NEXT_DIAG_6M"] if task == "next_diag_6m" else row["NEXT_DIAG_12M"]
                         if str(label) != "nan":  # only include the admission with next diagnosis
                             hadm_records[hadm_id] = list(patient) # this is why this line is inside the if statement
-                            genders[hadm_id] = row["GENDER"]
+                            # genders[hadm_id] = row["GENDER"]
                             ages[hadm_id] = list(age)
                             labels[hadm_id] = list(label)
             return hadm_records, genders, ages, labels
@@ -62,7 +62,7 @@ class FineTuneEHRDataset(Dataset):
         input_tokens = []
         token_types = [] 
         adm_index = []
-        gender = self.genders[hadm_id] # single value
+        # gender = self.genders[hadm_id] # single value
         ages = self.ages[hadm_id] # list of ages, one for each admission
         age_genders = []
 
@@ -80,7 +80,7 @@ class FineTuneEHRDataset(Dataset):
             token_types.extend(adm_token_types)
             # 0 is used for PAD token
             adm_index.extend([idx + 1] * len(adm_tokens))
-            age_genders.append(ages[idx] + "_" + gender)
+            age_genders.append(ages[idx])
 
         # build labels based on the task
         if self.task == "death":
@@ -115,7 +115,7 @@ class FineTuneEHRDataset(Dataset):
         return input_ids, token_types, adm_index, age_gender_ids, labels
 
 
-def batcher(tokenizer, task_index, n_token_type=4, is_pretrain=False, ):
+def batcher(tokenizer, task_index, n_token_type=4, is_pretrain=False):
     def batcher_dev(batch):
         raw_input_ids, raw_token_types, raw_adm_index, raw_age_gender_index, raw_labels = \
             [feat[0] for feat in batch], [feat[1] for feat in batch], [feat[2] for feat in batch], [feat[3] for feat in batch], [feat[4] for feat in batch]

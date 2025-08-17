@@ -14,9 +14,9 @@ class Voc(object):
                 self.word2id[word] = len(self.word2id)
                 
 class EHRTokenizer(object):
-    def __init__(self, type_sentences, task_sentences, age_gender_sentences, 
+    def __init__(self, type_sentences, task_sentences, age_sentences, 
                  diag_sentences, med_sentences, lab_sentences, pro_sentences, special_tokens):
-        self.vocab = Voc() # this is the global vocabulary, not including age_gender, token type, adm_index and task
+        self.vocab = Voc() # this is the global vocabulary, not including age, token type, adm_index and task
 
         # Add special tokens to the global voc table. 
         # Note that the PAD is 0.
@@ -30,13 +30,13 @@ class EHRTokenizer(object):
         self.task_voc.add_sentence(task_sentences)
         
         # share the global vocab
-        self.age_gender_voc = self.add_vocab(age_gender_sentences)
+        self.age_voc = self.add_vocab(age_sentences)
         self.diag_voc = self.add_vocab(diag_sentences)
         self.med_voc = self.add_vocab(med_sentences)
         self.lab_voc = self.add_vocab(lab_sentences)
         self.pro_voc = self.add_vocab(pro_sentences)
 
-        assert len(special_tokens) + len(self.age_gender_voc.id2word) + len(self.diag_voc.id2word) + \
+        assert len(special_tokens) + len(self.age_voc.id2word) + len(self.diag_voc.id2word) + \
             len(self.med_voc.id2word) + len(self.lab_voc.id2word) + len(self.pro_voc.id2word) == len(self.vocab.id2word)
 
     def add_vocab(self, sentences):
@@ -63,8 +63,8 @@ class EHRTokenizer(object):
                 ids.append(self.lab_voc.word2id[token])
             elif voc_type == "pro":
                 ids.append(self.pro_voc.word2id[token])
-            elif voc_type == "age_gender":
-                ids.append(self.age_gender_voc.word2id[token])
+            elif voc_type == "age":
+                ids.append(self.age_voc.word2id[token])
             elif voc_type == "task": # task
                 ids.append(self.task_voc.word2id[token])
             elif voc_type == "type":
@@ -87,8 +87,8 @@ class EHRTokenizer(object):
                 tokens.append(self.lab_voc.id2word[i])
             elif voc_type == "pro":
                 tokens.append(self.pro_voc.id2word[i])
-            elif voc_type == "age_gender":
-                tokens.append(self.age_gender_voc.id2word[i])
+            elif voc_type == "age":
+                tokens.append(self.age_voc.id2word[i])
             elif voc_type == "task": # task
                 tokens.append(self.task_voc.id2word[i])
             elif voc_type == "type":
@@ -98,29 +98,29 @@ class EHRTokenizer(object):
         return tokens
     
     def token_id_range(self, voc_type="diag"):
-        age_gender_size = len(self.age_gender_voc.id2word)
+        age_size = len(self.age_voc.id2word)
         diag_size = len(self.diag_voc.id2word)
         med_size = len(self.med_voc.id2word)
         lab_size = len(self.lab_voc.id2word)
         if voc_type == "special":
             return [0, self.n_special_tokens]
-        elif voc_type == "age_gender":
-            return [self.n_special_tokens, self.n_special_tokens + age_gender_size]
+        elif voc_type == "age":
+            return [self.n_special_tokens, self.n_special_tokens + age_size]
         elif voc_type == "diag":
-            return [self.n_special_tokens + age_gender_size, self.n_special_tokens + age_gender_size + diag_size]
+            return [self.n_special_tokens + age_size, self.n_special_tokens + age_size + diag_size]
         elif voc_type == "med":
-            return [self.n_special_tokens + age_gender_size + diag_size, self.n_special_tokens + age_gender_size + diag_size + med_size]
+            return [self.n_special_tokens + age_size + diag_size, self.n_special_tokens + age_size + diag_size + med_size]
         elif voc_type == "lab":
-            return [self.n_special_tokens + age_gender_size + diag_size + med_size, self.n_special_tokens + age_gender_size + diag_size + med_size + lab_size]
+            return [self.n_special_tokens + age_size + diag_size + med_size, self.n_special_tokens + age_size + diag_size + med_size + lab_size]
         elif voc_type == "pro":
-            return [self.n_special_tokens + age_gender_size + diag_size + med_size + lab_size, len(self.vocab.id2word)]
-        # age_gender is not part of the global vocab, it is just for embedding
+            return [self.n_special_tokens + age_size + diag_size + med_size + lab_size, len(self.vocab.id2word)]
+        # age is not part of the global vocab, it is just for embedding
 
     def token_number(self, voc_type="diag"):
         if voc_type == "all":
             return len(self.vocab.id2word)
-        elif voc_type == "age_gender":
-            return len(self.age_gender_voc.id2word)
+        elif voc_type == "age":
+            return len(self.age_voc.id2word)
         elif voc_type == "diag":
             return len(self.diag_voc.id2word)
         elif voc_type == "med":
@@ -129,8 +129,8 @@ class EHRTokenizer(object):
             return len(self.lab_voc.id2word)
         elif voc_type == "pro":
             return len(self.pro_voc.id2word)
-        elif voc_type == "age_gender":
-            return len(self.age_gender_voc.id2word)
+        elif voc_type == "age":
+            return len(self.age_voc.id2word)
         elif voc_type == "task":
             return len(self.task_voc.id2word)
         elif voc_type == "type":
@@ -148,8 +148,8 @@ class EHRTokenizer(object):
             return self.lab_voc.id2word[np.random.randint(len(self.lab_voc.id2word))]
         elif voc_type == "pro":
             return self.pro_voc.id2word[np.random.randint(len(self.pro_voc.id2word))]   
-        elif voc_type == "age_gender":
-            return self.age_gender_voc.id2word[np.random.randint(len(self.age_gender_voc.id2word))]
+        elif voc_type == "age":
+            return self.age_voc.id2word[np.random.randint(len(self.age_voc.id2word))]
         elif voc_type == "task":
             return self.task_voc.id2word[np.random.randint(len(self.task_voc.id2word))]
         elif voc_type == "type":
