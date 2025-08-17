@@ -105,7 +105,7 @@ class FineTuneEHRDataset(Dataset):
         # convert adm_index to tensor
         adm_index = torch.tensor([adm_index], dtype=torch.long)
         # convert age_gender_index to tensor
-        age_gender_ids = torch.tensor([self.tokenizer.convert_tokens_to_ids(age_genders, voc_type="age_gender")], dtype=torch.long)
+        age_gender_ids = torch.tensor([self.tokenizer.convert_tokens_to_ids(age_genders, voc_type="all")], dtype=torch.long)
 
         # sanity check
         assert input_ids.shape == token_types.shape == adm_index.shape, \
@@ -128,7 +128,7 @@ def batcher(tokenizer, task_index, n_token_type=4, is_pretrain=False, ):
         seq_pad_id = tokenizer.convert_tokens_to_ids(["[PAD]"], voc_type="all")[0]
         token_pad_id = 0
         adm_pad_id = 0
-        age_gender_pad_id = tokenizer.convert_tokens_to_ids(["[PAD]"], voc_type="age_gender")[0]
+        age_gender_pad_id = tokenizer.convert_tokens_to_ids(["[PAD]"], voc_type="all")[0]
 
         input_ids = torch.cat([F.pad(raw_input_id, (0, max_n_tokens - raw_input_id.size(1)), "constant", seq_pad_id) for raw_input_id in raw_input_ids], dim=0)
         token_types = torch.cat([F.pad(raw_token_type, (0, max_n_tokens - raw_token_type.size(1)), "constant", token_pad_id) for raw_token_type in raw_token_types], dim=0)

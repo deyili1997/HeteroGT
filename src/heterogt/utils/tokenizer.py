@@ -14,7 +14,7 @@ class Voc(object):
                 self.word2id[word] = len(self.word2id)
                 
 class EHRTokenizer(object):
-    def __init__(self, type_sentences, age_gender_sentences, task_sentences, 
+    def __init__(self, type_sentences, task_sentences, age_gender_sentences, 
                  diag_sentences, med_sentences, lab_sentences, pro_sentences, special_tokens):
         self.vocab = Voc() # this is the global vocabulary, not including age_gender, token type, adm_index and task
 
@@ -24,21 +24,21 @@ class EHRTokenizer(object):
         self.n_special_tokens = len(special_tokens)
         # create specific vocabularies for each type of code
         # at the same time, update the global vocabulary
-        self.age_gender_voc = Voc() # age_gender is not part of the global vocab, it is just for embedding age_gender information and add to the input
         self.token_type_voc = Voc() # type vocabulary, not part of the global vocab, it is just for embedding type information and add to the input
         self.task_voc = Voc() # task vocabulary, not part of the global vocab, it is just for embedding task information and add to the input
-        self.age_gender_voc.add_sentence(age_gender_sentences) 
-        self.task_voc.add_sentence(task_sentences)
         self.token_type_voc.add_sentence(type_sentences)
+        self.task_voc.add_sentence(task_sentences)
+        
+        # share the global vocab
+        self.age_gender_voc = self.add_vocab(age_gender_sentences)
         self.diag_voc = self.add_vocab(diag_sentences)
         self.med_voc = self.add_vocab(med_sentences)
         self.lab_voc = self.add_vocab(lab_sentences)
         self.pro_voc = self.add_vocab(pro_sentences)
 
-        assert len(special_tokens) + len(self.diag_voc.id2word) + \
-            len(self.med_voc.id2word) + len(self.lab_voc.id2word) + \
-            len(self.pro_voc.id2word) == len(self.vocab.id2word)
-        
+        assert len(special_tokens) + len(self.age_gender_voc.id2word) + len(self.diag_voc.id2word) + \
+            len(self.med_voc.id2word) + len(self.lab_voc.id2word) + len(self.pro_voc.id2word) == len(self.vocab.id2word)
+
     def add_vocab(self, sentences):
         voc = self.vocab
         specific_voc = Voc()
@@ -98,25 +98,30 @@ class EHRTokenizer(object):
         return tokens
     
     def token_id_range(self, voc_type="diag"):
+        age_gender_size = len(self.age_gender_voc.id2word)
         diag_size = len(self.diag_voc.id2word)
         med_size = len(self.med_voc.id2word)
         lab_size = len(self.lab_voc.id2word)
         if voc_type == "special":
             return [0, self.n_special_tokens]
+        elif voc_type == "age_gender":
+            return [self.n_special_tokens, self.n_special_tokens + age_gender_size]
         elif voc_type == "diag":
-            return [self.n_special_tokens, self.n_special_tokens + diag_size]
+            return [self.n_special_tokens + age_gender_size, self.n_special_tokens + age_gender_size + diag_size]
         elif voc_type == "med":
-            return [self.n_special_tokens + diag_size, self.n_special_tokens + diag_size + med_size]
+            return [self.n_special_tokens + age_gender_size + diag_size, self.n_special_tokens + age_gender_size + diag_size + med_size]
         elif voc_type == "lab":
-            return [self.n_special_tokens + diag_size + med_size, self.n_special_tokens + diag_size + med_size + lab_size]
+            return [self.n_special_tokens + age_gender_size + diag_size + med_size, self.n_special_tokens + age_gender_size + diag_size + med_size + lab_size]
         elif voc_type == "pro":
-            return [self.n_special_tokens + diag_size + med_size + lab_size, len(self.vocab.id2word)]
+            return [self.n_special_tokens + age_gender_size + diag_size + med_size + lab_size, len(self.vocab.id2word)]
         # age_gender is not part of the global vocab, it is just for embedding
 
     def token_number(self, voc_type="diag"):
         if voc_type == "all":
             return len(self.vocab.id2word)
-        if voc_type == "diag":
+        elif voc_type == "age_gender":
+            return len(self.age_gender_voc.id2word)
+        elif voc_type == "diag":
             return len(self.diag_voc.id2word)
         elif voc_type == "med":
             return len(self.med_voc.id2word)
